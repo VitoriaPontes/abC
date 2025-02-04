@@ -7,13 +7,17 @@
 
 // funções para o funcionamento do jogo Desembaraçar
 void desembaraca(Lista *nomes){
+    // preparação para o início do jogo
     // escolhe aleatoriamente qual palavra será selecionada
     srand(time(NULL));
     int num = rand()%nomes->qtd;
     struct palavra secreta;
     acessarValor(nomes, num, &secreta); //secreta será a palavra escolhida
     //printf("%s", secreta.nome); //teste
-    aleatorizar(secreta.soletrado, secreta.tam);
+    char **aleatorio = secreta.soletrado;
+    
+    // iniciando o jogo
+    jogar(secreta.tam, aleatorio);
     return;
 }
 
@@ -31,14 +35,30 @@ void aleatorizar(char **aleatorio, int tam){
     //printf("%s%s%s", aleatorio[0], aleatorio[1], aleatorio[2]); //teste
 }
 
-void exibirMenu(char **aleatorio, int tam){
-    for (int i = 0; i < tam; i++){
-        printf("%s", aleatorio[i]);
+void jogar(int tam, char **aleatorio){
+    aleatorizar(aleatorio, tam);
+    int opcao = 0;
+    char mover;
+    while (1){
+        for (int i = 0; i < tam; i++) {
+            if (i == opcao) {
+                printf("->%s<-  ", aleatorio[i]);
+            }
+            else {
+                printf("%s  ", aleatorio[i]);
+            }
+        }
+        
+        scanf("%c", &mover);
+        if (mover == 'a' && opcao > 0){
+            opcao--;
+        }
+        else if (mover == 'd' && opcao < tam - 1){
+            opcao++;
+        }
     }
-    
-    printf("\n\n");
-    
-    
+    return;
+        
 }
 
 // main
