@@ -11,20 +11,19 @@ void desembaraca(Lista *nomes){
     // escolhe aleatoriamente qual palavra será selecionada
     srand(time(NULL));
     int num = rand()%nomes->qtd;
-    struct palavra secreta;
+    Palavra secreta;
     acessarValor(nomes, num, &secreta); //secreta será a palavra escolhida
     //printf("%s", secreta.nome); //teste
-    char **aleatorio = secreta.soletrado;
     
     // iniciando o jogo
-    jogar(secreta.tam, aleatorio);
+    jogar(secreta);
     return;
 }
 
 //aleatoriza o jogo
 void aleatorizar(char **aleatorio, int tam){
     //printf("%s%s%s\n", aleatorio[0], aleatorio[1], aleatorio[2]); //teste
-    char *guardar = "";
+    char *guardar;
     int dado;
     for(int i = 0; i < tam; i++){
         dado = rand()%tam;
@@ -35,11 +34,26 @@ void aleatorizar(char **aleatorio, int tam){
     //printf("%s%s%s", aleatorio[0], aleatorio[1], aleatorio[2]); //teste
 }
 
-void jogar(int tam, char **aleatorio){
-    aleatorizar(aleatorio, tam);
+void jogar(Palavra secreta){
+
+    //definindo variáveis
+    
+    int tam = secreta.tam;
+    char **aleatorio = secreta.soletrado;
     int opcao = 0;
     char mover;
+    char *guardar;
+    int troca = -1;
+    int cont;
+    
+    //embaralhando as sílabas
+    aleatorizar(aleatorio, tam);
+    
+    int jogar = 1;
+    //loop da partida
     while (1){
+        system("clear");
+        //imprime o menu do jogo
         for (int i = 0; i < tam; i++) {
             if (i == opcao) {
                 printf("->%s<-  ", aleatorio[i]);
@@ -49,12 +63,39 @@ void jogar(int tam, char **aleatorio){
             }
         }
         
-        scanf("%c", &mover);
+        //movimentação da seta de escolha
+        fflush(stdin);
+        mover = getchar();
+        
         if (mover == 'a' && opcao > 0){
             opcao--;
         }
         else if (mover == 'd' && opcao < tam - 1){
             opcao++;
+        }
+        
+        //desembaralhando de acordo com o jogador
+        if (mover == 'k' && troca == -1){
+            troca = opcao;
+        }
+        else if (mover == 'k' && troca != -1){
+            guardar = aleatorio[opcao];
+            aleatorio[opcao] = aleatorio[troca];
+            aleatorio[troca] = guardar;
+            troca = -1;
+        }
+        
+        //checando se chegou no resultado correto
+        cont = 0;
+        for (int j = 0; j < tam; j++){
+            if (strcmp(aleatorio[j], secreta.soletrado[j]) == 0){
+                cont++;
+            }
+        }
+        
+        if (cont == tam){
+            printf("Parabéns! Você ganhou um ponto.\n\n");
+            break;
         }
     }
     return;
@@ -98,6 +139,11 @@ int main() {
     //exibir(nomes); //teste
 
     int pontos = 0;
-    desembaraca(nomes);
+    
+    //loop do jogo
+    while(1){
+        desembaraca(nomes); // como no momento só existe esse jogo, ele vai rodar infinitamente
+        pontos++;
+    }
     return 0;
 }
