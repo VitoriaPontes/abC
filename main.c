@@ -4,11 +4,13 @@
 #include <time.h>
 #include <string.h>
 #include "lista.h"
+#include "hardware/adc.h"
+#define BUTTON1_PIN 5 // botão 1
+#define BUTTON2_PIN 6 // botão 2
 
 
-
-//aleatoriza o jogo
-void aleatorizar(Palavra secreta){
+// embaralha as sílabas da palavra
+void embaralhar(Palavra secreta){
     int guardar;
     int dado;
     for(int i = 0; i < secreta.tam; i++){
@@ -24,7 +26,6 @@ void aleatorizar(Palavra secreta){
 void jogar(Palavra secreta){
 
     //definindo variáveis
-  
     int opcao = 0;
     char mover;
     int guardar;
@@ -32,42 +33,55 @@ void jogar(Palavra secreta){
     int cont;
     
     //embaralhando as sílabas
-    aleatorizar(secreta);
+    embaralhar(secreta);
     
+    int mudanca = 0;
     int jogar = 1;
     //loop da partida
     while (1){
         system("clear");
         //imprime o menu do jogo
-        for (int i = 0; i < secreta.tam; i++) {
-            if (i == opcao) {
-                printf("->%s<-  ", secreta.soletrado[secreta.posicoes[i] - 1]);
+        if (mudanca == 1){
+            for (int i = 0; i < secreta.tam; i++) {
+                if (i == opcao) {
+                    printf("->%s<-  ", secreta.soletrado[secreta.posicoes[i] - 1]);
+                }
+                else {
+                    printf("%s  ", secreta.soletrado[secreta.posicoes[i] - 1]);
+                }
             }
-            else {
-                printf("%s  ", secreta.soletrado[secreta.posicoes[i] - 1]);
-            }
+            mudanca = 0;
         }
         
         //movimentação da seta de escolha
-        fflush(stdin);
-        mover = getchar();
+        adc_select_input(1);
+        uint adc_x = adc_read(); // leitura do valor do analógico
         
-        if (mover == 'a' && opcao > 0){
+        if (adc_x < 50 && opcao > 0){
             opcao--;
+            mudanca = 1;
         }
-        else if (mover == 'd' && opcao < secreta.tam - 1){
+
+        else if (adc_x > 4000 && opcao < secreta.tam - 1){
             opcao++;
+            mudanca = 1;
         }
-        
-        //desembaralhando de acordo com o jogador
-        if (mover == 'k' && troca == -1){
-            troca = opcao;
-        }
-        else if (mover == 'k' && troca != -1){
-            guardar = secreta.posicoes[opcao];
-            secreta.posicoes[opcao] = secreta.posicoes[troca];
-            secreta.posicoes[troca] = guardar;
-            troca = -1;
+
+        else{
+            if ((gpio_get(BUTTON1_PIN) == 0 || gpio_get(BUTTON2_PIN) == 0) && troca == -1){
+                troca = opcao;
+                mudanca = 1;
+            }
+            else if ((gpio_get(BUTTON1_PIN) == 0 || gpio_get(BUTTON2_PIN) == 0) && troca != -1){
+                guardar = secreta.posicoes[opcao];
+                secreta.posicoes[opcao] = secreta.posicoes[troca];
+                secreta.posicoes[troca] = guardar;
+                troca = -1;
+                mudanca = 1;
+            }
+            while (gpio_get(BUTTON1_PIN) == 0 || gpio_get(BUTTON2_PIN) == 0){
+                sleep_ms(20);
+            }
         }
         
         //checando se chegou no resultado correto
@@ -80,7 +94,7 @@ void jogar(Palavra secreta){
         
         if (cont == secreta.tam){
             printf("Parabéns! Você ganhou um ponto.\n\n");
-            sleep_ms(3000);
+            sleep_ms(5000);
             break;
         }
     }
@@ -105,7 +119,21 @@ void desembaraca(Lista *nomes){
 
 // main
 int main() {
+    // inicialização do ADC
     stdio_init_all();
+    adc_init();
+
+    adc_gpio_init(26);
+    adc_gpio_init(27);
+
+    gpio_init(BUTTON1_PIN);
+    gpio_set_dir(BUTTON1_PIN, GPIO_IN);
+    gpio_pull_up(BUTTON1_PIN);
+
+    gpio_init(BUTTON2_PIN);
+    gpio_set_dir(BUTTON2_PIN, GPIO_IN);
+    gpio_pull_up(BUTTON2_PIN);
+
     //criação da lista
     Lista *nomes;
     nomes = criar(nomes);
