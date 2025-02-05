@@ -3,6 +3,7 @@
 struct palavra {
     char *nome;
     char **soletrado;
+    int *posicoes;
     int tam;
 };
 
@@ -25,7 +26,7 @@ int inserirInicio (Lista *, Palavra);
 int acessarValor(Lista *, int, Palavra*);
 void destruir(Lista *);
 int vazia (Lista *);
-Palavra criarPalavra(char *, char **, int);
+Palavra criarPalavra(char*, char **, int *, int);
 
 // para controle de testes:
 int exibir(Lista *);
