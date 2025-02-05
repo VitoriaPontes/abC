@@ -77,11 +77,11 @@ int exibir(Lista *lista) {
     return 1;
 }
 
-Palavra criarPalavra(char *nome, char *soletrado[], int tam){
+Palavra criarPalavra(char *nome, char **soletrado, int *posicoes, int tam){
     struct palavra nova;
     nova.nome = nome;
     nova.soletrado = soletrado;
+    nova.posicoes = posicoes;
     nova.tam = tam;
     return nova;
 }
-
