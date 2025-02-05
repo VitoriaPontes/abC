@@ -41,10 +41,10 @@ void jogar(Palavra secreta){
         //imprime o menu do jogo
         for (int i = 0; i < secreta.tam; i++) {
             if (i == opcao) {
-                printf("->%s<-  ", secreta.soletrado[secreta.posicoes[i]]);
+                printf("->%s<-  ", secreta.soletrado[secreta.posicoes[i] - 1]);
             }
             else {
-                printf("%s  ", secreta.soletrado[secreta.posicoes[i]]);
+                printf("%s  ", secreta.soletrado[secreta.posicoes[i] - 1]);
             }
         }
         
@@ -71,7 +71,7 @@ void jogar(Palavra secreta){
         }
         
         //checando se chegou no resultado correto
-        /*cont = 0;
+        cont = 0;
         for (int j = 0; j < secreta.tam; j++){
             if (secreta.posicoes[j] == (j+1)){
                 cont++;
@@ -82,7 +82,7 @@ void jogar(Palavra secreta){
             printf("Parabéns! Você ganhou um ponto.\n\n");
             sleep_ms(3000);
             break;
-        }*/
+        }
     }
     return;
         
