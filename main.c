@@ -5,13 +5,12 @@
 #include <string.h>
 #include "lista.h"
 #include "hardware/adc.h"
-#include "inc/ssd1306.h"
+#include "include/ssd1306.h"
 #include "hardware/i2c.h"
 #define BUTTON1_PIN 5 // botão 1
 #define BUTTON2_PIN 6 // botão 2
 const uint I2C_SDA = 14;
 const uint I2C_SCL = 15;
-
 
 
 // embaralha as sílabas da palavra
@@ -26,7 +25,7 @@ void embaralhar(Palavra secreta){
     }
 }
 
-void exibir(Palavra secreta){
+/*void exibir(Palavra secreta){
     //calculate_render_area_buffer_length(&frame_area);
     for (int i = 0; i < secreta.tam; i++) {
                 if (i == opcao) {
@@ -37,7 +36,7 @@ void exibir(Palavra secreta){
                 }
             }
             mudanca = 0;
-}
+}*/
 
 // função principal da partida
 void jogar(Palavra secreta){
@@ -134,6 +133,20 @@ void desembaraca(Lista *nomes){
     return;
 }
 
+void display_text_on_ssd1306(uint8_t *ssd, const char *line1, const char *line2, int buffer_length, struct render_area *frame_area) {
+    char text[2][20]; // Ajuste o tamanho do array conforme necessário
+
+    snprintf(text[0], sizeof(text[0]), "%s", line1);
+    snprintf(text[1], sizeof(text[1]), "%s", line2);
+
+    int y = 0;
+    for (uint i = 0; i < 2; i++) // Ajuste o tamanho do loop conforme necessário
+    {
+        ssd1306_draw_string(ssd, 5, y, text[i]);
+        y += 8;
+    }
+    render_on_display(ssd, frame_area);
+}
 
 // main
 int main() {
@@ -169,6 +182,17 @@ int main() {
         end_page : ssd1306_n_pages - 1
     };
     calculate_render_area_buffer_length(&frame_area);
+        uint8_t ssd[ssd1306_buffer_length];
+    memset(ssd, 0, ssd1306_buffer_length);
+    render_on_display(ssd, &frame_area);
+ /*
+        char *text[] = {
+        "  Bem-vindos!   ",
+        "  Embarcatech   "};
+*/
+
+    display_text_on_ssd1306(ssd, "yddafafy", "  Embarcadadtech", ssd1306_buffer_length, &frame_area);
+
 
     //criação da lista
     Lista *nomes;
@@ -182,28 +206,28 @@ int main() {
     //criação do elemento banana
     char *temp2[] = {"te", "le", "fo", "ne", "ma"};
     int pos2[] = {1, 2, 3};
-    Palavra banana = criarPalavra("telefonema", temp2, pos2, 5);
+    Palavra telefonema = criarPalavra("telefonema", temp2, pos2, 5);
     
     //criação do elemento cachorro
     char *temp3[] = {"bi", "bli", "o", "te", "ca"};
     int pos3[] = {1, 2, 3};
-    Palavra cachorro = criarPalavra("biblioteca", temp3, pos3, 5);
+    Palavra biblioteca = criarPalavra("biblioteca", temp3, pos3, 5);
     
     //criação do elemento paralelepipedo
     char *temp4[] = {"sen", "si", "bi", "li", "da", "de"};
     int pos4[] = {1, 2, 3, 4, 5, 6, 7};
-    Palavra paralelepipedo = criarPalavra("sensibilidade", temp4, pos4, 6);
+    Palavra sensibilidade = criarPalavra("sensibilidade", temp4, pos4, 6);
     
     //criação da palavra matematica
     char *temp5[] = {"mo", "nu", "men", "to"};
     int pos5[] = {1, 2, 3, 4, 5};
-    Palavra matematica = criarPalavra("monumento", temp5, pos5, 4);
+    Palavra monumento = criarPalavra("monumento", temp5, pos5, 4);
     
     //inserção dos elementos na lista
-    inserirInicio(nomes, paralelepipedo);
-    inserirInicio(nomes, matematica);
-    inserirInicio(nomes, cachorro);
-    inserirInicio(nomes, banana);
+    inserirInicio(nomes, monumento);
+    inserirInicio(nomes, sensibilidade);
+    inserirInicio(nomes, biblioteca);
+    inserirInicio(nomes, telefonema);
     inserirInicio(nomes, abacate);
     
     //exibindo a lista
