@@ -5,8 +5,13 @@
 #include <string.h>
 #include "lista.h"
 #include "hardware/adc.h"
+#include "inc/ssd1306.h"
+#include "hardware/i2c.h"
 #define BUTTON1_PIN 5 // botão 1
 #define BUTTON2_PIN 6 // botão 2
+const uint I2C_SDA = 14;
+const uint I2C_SCL = 15;
+
 
 
 // embaralha as sílabas da palavra
@@ -21,13 +26,24 @@ void embaralhar(Palavra secreta){
     }
 }
 
+void exibir(Palavra secreta){
+    //calculate_render_area_buffer_length(&frame_area);
+    for (int i = 0; i < secreta.tam; i++) {
+                if (i == opcao) {
+                    printf("->%s<-  ", secreta.soletrado[secreta.posicoes[i] - 1]);
+                }
+                else {
+                    printf("%s  ", secreta.soletrado[secreta.posicoes[i] - 1]);
+                }
+            }
+            mudanca = 0;
+}
 
-
+// função principal da partida
 void jogar(Palavra secreta){
 
     //definindo variáveis
     int opcao = 0;
-    char mover;
     int guardar;
     int troca = -1;
     int cont;
@@ -57,12 +73,12 @@ void jogar(Palavra secreta){
         adc_select_input(1);
         uint adc_x = adc_read(); // leitura do valor do analógico
         
-        if (adc_x < 50 && opcao > 0){
+        if (adc_x < 200 && opcao > 0){
             opcao--;
             mudanca = 1;
         }
 
-        else if (adc_x > 4000 && opcao < secreta.tam - 1){
+        else if (adc_x > 3500 && opcao < secreta.tam - 1){
             opcao++;
             mudanca = 1;
         }
@@ -83,6 +99,8 @@ void jogar(Palavra secreta){
                 sleep_ms(20);
             }
         }
+
+        sleep_ms(200);
         
         //checando se chegou no resultado correto
         cont = 0;
@@ -93,7 +111,7 @@ void jogar(Palavra secreta){
         }
         
         if (cont == secreta.tam){
-            printf("Parabéns! Você ganhou um ponto.\n\n");
+            printf("Parabéns! A palavra é %s. Você ganhou um ponto.\n\n", secreta.nome);
             sleep_ms(5000);
             break;
         }
@@ -134,6 +152,24 @@ int main() {
     gpio_set_dir(BUTTON2_PIN, GPIO_IN);
     gpio_pull_up(BUTTON2_PIN);
 
+    // inicializando o i2c
+    i2c_init(i2c1, ssd1306_i2c_clock * 1000);
+    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
+    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
+    gpio_pull_up(I2C_SDA);
+    gpio_pull_up(I2C_SCL);
+
+    // inicializando o oled
+    ssd1306_init();
+
+    struct render_area frame_area = {
+        start_column : 0,
+        end_column : ssd1306_width - 1,
+        start_page : 0,
+        end_page : ssd1306_n_pages - 1
+    };
+    calculate_render_area_buffer_length(&frame_area);
+
     //criação da lista
     Lista *nomes;
     nomes = criar(nomes);
@@ -144,24 +180,24 @@ int main() {
     Palavra abacate = criarPalavra("abacate", temp1, pos1, 4);
     
     //criação do elemento banana
-    char *temp2[] = {"ba", "na", "na"};
+    char *temp2[] = {"te", "le", "fo", "ne", "ma"};
     int pos2[] = {1, 2, 3};
-    Palavra banana = criarPalavra("banana", temp2, pos2, 3);
+    Palavra banana = criarPalavra("telefonema", temp2, pos2, 5);
     
     //criação do elemento cachorro
-    char *temp3[] = {"ca", "chor", "ro"};
+    char *temp3[] = {"bi", "bli", "o", "te", "ca"};
     int pos3[] = {1, 2, 3};
-    Palavra cachorro = criarPalavra("cachorro", temp3, pos3, 3);
+    Palavra cachorro = criarPalavra("biblioteca", temp3, pos3, 5);
     
     //criação do elemento paralelepipedo
-    char *temp4[] = {"pa", "ra", "le", "le", "pi", "pe", "do"};
+    char *temp4[] = {"sen", "si", "bi", "li", "da", "de"};
     int pos4[] = {1, 2, 3, 4, 5, 6, 7};
-    Palavra paralelepipedo = criarPalavra("paralelepipedo", temp4, pos4, 7);
+    Palavra paralelepipedo = criarPalavra("sensibilidade", temp4, pos4, 6);
     
     //criação da palavra matematica
-    char *temp5[] = {"ma", "te", "ma", "ti", "ca"};
+    char *temp5[] = {"mo", "nu", "men", "to"};
     int pos5[] = {1, 2, 3, 4, 5};
-    Palavra matematica = criarPalavra("matematica", temp5, pos5, 5);
+    Palavra matematica = criarPalavra("monumento", temp5, pos5, 4);
     
     //inserção dos elementos na lista
     inserirInicio(nomes, paralelepipedo);
