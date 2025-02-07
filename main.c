@@ -13,6 +13,14 @@ const uint I2C_SDA = 14;
 const uint I2C_SCL = 15;
 
 
+// função para exibir o texto no display
+void display_text_on_ssd1306(uint8_t *ssd, const char *line1, const char *line2, int buffer_length, struct render_area *frame_area) {
+    ssd1306_clear(ssd); // Limpa o display antes de desenhar
+    ssd1306_draw_string(ssd, 5, 0, line1);
+    ssd1306_draw_string(ssd, 5, 8, line2);
+    render_on_display(ssd, frame_area);
+}
+
 // embaralha as sílabas da palavra
 void embaralhar(Palavra secreta){
     int guardar;
@@ -39,8 +47,9 @@ void embaralhar(Palavra secreta){
 }*/
 
 // função principal da partida
-void jogar(Palavra secreta){
+void jogar(Palavra secreta, struct rendes_area *frame_area, int pontos){
 
+    ssd1306_init();
     //definindo variáveis
     int opcao = 0;
     int guardar;
@@ -56,17 +65,35 @@ void jogar(Palavra secreta){
     while (1){
         system("clear");
         //imprime o menu do jogo
-        if (mudanca == 1){
-            for (int i = 0; i < secreta.tam; i++) {
-                if (i == opcao) {
-                    printf("->%s<-  ", secreta.soletrado[secreta.posicoes[i] - 1]);
-                }
-                else {
-                    printf("%s  ", secreta.soletrado[secreta.posicoes[i] - 1]);
-                }
+    if (mudanca == 1) {
+        //char text[100]; // Ajuste o tamanho do array conforme necessário
+        //text[0] = '\0'; // Inicializa a string vazia
+        /*for (int i = 0; i < secreta.tam; i++) {
+            char buffer[20];
+            if (i == opcao) {
+                snprintf(buffer, sizeof(buffer), "->%s<-  ", secreta.soletrado[secreta.posicoes[i] - 1]);
+            } else {
+                snprintf(buffer, sizeof(buffer), "%s  ", secreta.soletrado[secreta.posicoes[i] - 1]);
             }
-            mudanca = 0;
+            strncat(text, buffer, sizeof(text) - strlen(text) - 1);
+        }*/
+       char *text1 = "";
+        for(int i = 0; i < secreta.tam; i++){
+            if (i == opcao){
+                text1 = strcat(text1, "->");
+                text1 = strcat(text1, secreta.soletrado[secreta.posicoes[i] - 1]);
+                text1 = strcat(text1, "<-  ");
+            }
+            else{
+                text1 = strcat(text1, secreta.soletrado[secreta.posicoes[i] - 1]);
+                text1 = strcat(text1, "  ");
+            }
         }
+        char text2[20];
+        snprintf(text2, sizeof(text2), "Pontos: %d", pontos);
+        display_text_on_ssd1306(ssd, text1, text2, ssd1306_buffer_length, &frame_area);
+        mudanca = 0;
+    }
         
         //movimentação da seta de escolha
         adc_select_input(1);
@@ -119,7 +146,7 @@ void jogar(Palavra secreta){
         
 }
 
-void desembaraca(Lista *nomes){
+void desembaraca(Lista *nomes, struct render_area *frame_area, int pontos){
     // preparação para o início do jogo
     // escolhe aleatoriamente qual palavra será selecionada
     srand(time(NULL));
@@ -129,23 +156,8 @@ void desembaraca(Lista *nomes){
     //printf("%s", secreta.nome); //teste
     
     // iniciando o jogo
-    jogar(secreta);
+    jogar(secreta, &frame_area, pontos);
     return;
-}
-
-void display_text_on_ssd1306(uint8_t *ssd, const char *line1, const char *line2, int buffer_length, struct render_area *frame_area) {
-    char text[2][20]; // Ajuste o tamanho do array conforme necessário
-
-    snprintf(text[0], sizeof(text[0]), "%s", line1);
-    snprintf(text[1], sizeof(text[1]), "%s", line2);
-
-    int y = 0;
-    for (uint i = 0; i < 2; i++) // Ajuste o tamanho do loop conforme necessário
-    {
-        ssd1306_draw_string(ssd, 5, y, text[i]);
-        y += 8;
-    }
-    render_on_display(ssd, frame_area);
 }
 
 // main
@@ -173,25 +185,22 @@ int main() {
     gpio_pull_up(I2C_SCL);
 
     // inicializando o oled
-    ssd1306_init();
+    
 
+    // configuração do display
     struct render_area frame_area = {
         start_column : 0,
         end_column : ssd1306_width - 1,
-        start_page : 0,
+        start_page : 1,
         end_page : ssd1306_n_pages - 1
     };
+
     calculate_render_area_buffer_length(&frame_area);
-        uint8_t ssd[ssd1306_buffer_length];
+    uint8_t ssd[ssd1306_buffer_length];
     memset(ssd, 0, ssd1306_buffer_length);
     render_on_display(ssd, &frame_area);
- /*
-        char *text[] = {
-        "  Bem-vindos!   ",
-        "  Embarcatech   "};
-*/
 
-    display_text_on_ssd1306(ssd, "yddafafy", "  Embarcadadtech", ssd1306_buffer_length, &frame_area);
+    //display_text_on_ssd1306(ssd, "oi", "oieee", ssd1306_buffer_length, &frame_area);
 
 
     //criação da lista
@@ -238,7 +247,7 @@ int main() {
     //loop do jogo
     while(1){
         printf("Pontuação: %d\n", pontos);
-        desembaraca(nomes); // como no momento só existe esse jogo, ele vai rodar infinitamente
+        desembaraca(nomes, &frame_area, pontos); // como no momento só existe esse jogo, ele vai rodar infinitamente
         pontos++;
     }
 }
