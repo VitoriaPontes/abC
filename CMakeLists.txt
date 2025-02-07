@@ -35,7 +35,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(aBC aBC.c lista.c include/ssd1306_i2c.c)
+add_executable(aBC aBC.c lista.c include/ssd1306_i2c)
 
 pico_set_program_name(aBC "aBC")
 pico_set_program_version(aBC "0.1")
@@ -57,7 +57,7 @@ target_include_directories(aBC PRIVATE
 
 # Add any user requested libraries
 target_link_libraries(aBC 
-        
+        hardware_i2c
         )
 
 pico_add_extra_outputs(aBC)
