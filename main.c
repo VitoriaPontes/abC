@@ -152,6 +152,7 @@ void jogar(Palavra secreta, int pontos, uint8_t* ssd, struct render_area frame_a
     return;
 }
 
+//função que prepara o início do jogo
 void desembaraca(Lista *nomes, int pontos, uint8_t* ssd, struct render_area frame_area){
     // preparação para o início do jogo
     // escolhe aleatoriamente qual palavra será selecionada
