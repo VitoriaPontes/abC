@@ -8,19 +8,19 @@
 #include "include/ssd1306.h"
 #include "hardware/i2c.h"
 #include "pico/rand.h"    
-#define BUTTON1_PIN 5 // botão 1
-#define BUTTON2_PIN 6 // botão 2
-#define LED_BLUE 12 // led azul
-#define LED_GREEN 11 // led azul
+#define BUTTON1_PIN 5 //botão 1
+#define BUTTON2_PIN 6 //botão 2
+#define LED_BLUE 12 //led azul
+#define LED_GREEN 11 //led azul
 
 const uint I2C_SDA = 14;
 const uint I2C_SCL = 15;
 
 
-// função para exibir o texto no display
+//função para exibir o texto no display
 void display_text_on_ssd1306(uint8_t *ssd, const char *line1, const char *line2, int buffer_length, struct render_area *frame_area) {
     int x = 0;
-    char str[2] = {0}; // Temporary string to hold a single character
+    char str[2] = {0};
     for (uint i = 0; i < strlen(line1); i++)
     {
         str[0] = line1[i];
@@ -32,10 +32,10 @@ void display_text_on_ssd1306(uint8_t *ssd, const char *line1, const char *line2,
     render_on_display(ssd, frame_area);
 }
 
-// embaralha as sílabas da palavra
+//embaralha as sílabas da palavra
 void embaralhar(Palavra secreta){
     int guardar;
-    uint8_t  dado;
+    uint8_t dado;
     for(int i = 0; i < secreta.tam; i++){
         dado = (uint8_t)get_rand_32()%(secreta.tam);
         guardar = secreta.posicoes[dado];
@@ -44,20 +44,7 @@ void embaralhar(Palavra secreta){
     }
 }
 
-/*void exibir(Palavra secreta){
-    //calculate_render_area_buffer_length(&frame_area);
-    for (int i = 0; i < secreta.tam; i++) {
-                if (i == opcao) {
-                    printf("->%s<-  ", secreta.soletrado[secreta.posicoes[i] - 1]);
-                }
-                else {
-                    printf("%s  ", secreta.soletrado[secreta.posicoes[i] - 1]);
-                }
-            }
-            mudanca = 0;
-}*/
-
-// função principal da partida
+//função principal da partida
 void jogar(Palavra secreta, int pontos, uint8_t* ssd, struct render_area frame_area){
     //inicializando o display
     ssd1306_init();
@@ -70,51 +57,54 @@ void jogar(Palavra secreta, int pontos, uint8_t* ssd, struct render_area frame_a
     int mudanca = 0;
     int jogar = 1;
     
-    
     //embaralhando as sílabas
     embaralhar(secreta);
     
-
     //loop da partida
     while (1){
 
-    //imprime o menu do jogo
-    do {
-      char text1[20] = "";
-        for(int i = 0; i < secreta.tam; i++){
-            if (i == opcao){
-                strcat(text1, "y");
-                strcat(text1, secreta.soletrado[secreta.posicoes[i] - 1]);
-                strcat(text1, "y");
+        //imprime o menu do jogo
+        do { //para que seja exibido ao iniciar o jogo e após cada mudança
+            //reseta o display
+            uint8_t ssd[ssd1306_buffer_length];
+            memset(ssd, 0, ssd1306_buffer_length);
+            render_on_display(ssd, &frame_area);
+
+            //imprime o texto no display
+            char text1[20] = "";
+            for(int i = 0; i < secreta.tam; i++){
+                if (i == opcao){
+                    strcat(text1, "y");
+                    strcat(text1, secreta.soletrado[secreta.posicoes[i] - 1]);
+                    strcat(text1, "y");
+                }
+                else{
+                    strcat(text1, secreta.soletrado[secreta.posicoes[i] - 1]);
+                    strcat(text1, " ");
+                }
             }
-            else{
-                strcat(text1, secreta.soletrado[secreta.posicoes[i] - 1]);
-                strcat(text1, " ");
-            }
-        }
-        char text2[20];
-        snprintf(text2, sizeof(text2), "Pontos %d", pontos);
-        printf("%s\n", text1);
-        printf("%s\n", text2);
-        display_text_on_ssd1306(ssd, text1, text2, ssd1306_buffer_length, &frame_area);
-        mudanca = 0;
-    } while(mudanca == 1);
+            char text2[20];
+            snprintf(text2, sizeof(text2), "Pontos %d", pontos);
+            display_text_on_ssd1306(ssd, text1, text2, ssd1306_buffer_length, &frame_area);
+
+            mudanca = 0; //para que só seja exibido uma vez, pois só houve uma mudança
+
+        } while(mudanca == 1);
         
         //movimentação da seta de escolha
         adc_select_input(1);
         uint adc_x = adc_read(); // leitura do valor do analógico
         
+        //a opcao muda de acordo com o valor do analógico e indica qual a sílaba que está sendo escolhida
         if (adc_x < 200 && opcao > 0){
             opcao--;
             mudanca = 1;
         }
-
         else if (adc_x > 3500 && opcao < secreta.tam - 1){
             opcao++;
             mudanca = 1;
         }
-
-        else{
+        else{ //se o analógico não mudou, verifica se os botões foram pressionados
             if ((gpio_get(BUTTON1_PIN) == 0 || gpio_get(BUTTON2_PIN) == 0) && troca == -1){
                 troca = opcao;
                 mudanca = 1;
@@ -126,43 +116,50 @@ void jogar(Palavra secreta, int pontos, uint8_t* ssd, struct render_area frame_a
                 troca = -1;
                 mudanca = 1;
             }
+            //troca -1 indica que não houve escolha de sílaba, troca diferente de -1 indica que houve escolha de sílaba
             while (gpio_get(BUTTON1_PIN) == 0 || gpio_get(BUTTON2_PIN) == 0){
                 sleep_ms(20);
             }
+            //o led ficará azul enquanto está sendo feita a seleção
             if (troca != -1){
                 gpio_put(LED_BLUE, true);
-            } else
+            }
+            else{
                 gpio_put(LED_BLUE, false);
+            }
         }
 
+        //dá um tempo para que o display e as opções não fiquem muito rápidas
         sleep_ms(200);
         
         //checando se chegou no resultado correto
         cont = 0;
         for (int j = 0; j < secreta.tam; j++){
             if (secreta.posicoes[j] == (j+1)){
-                cont++;
+            cont++;
             }
         }
         
+        //se tiver chegado, acaba a partida, aumenta um ponto e vai pra próxima
         if (cont == secreta.tam){
-
+            char text2[20];
+            snprintf(text2, sizeof(text2), "Pontos %d", pontos);
+            display_text_on_ssd1306(ssd, secreta.nome, text2, ssd1306_buffer_length, &frame_area);
             break;
         }
     }
+
     return;
-        
 }
 
+//função que prepara o início do jogo
 void desembaraca(Lista *nomes, int pontos, uint8_t* ssd, struct render_area frame_area){
     // preparação para o início do jogo
     // escolhe aleatoriamente qual palavra será selecionada
     uint8_t num = (uint8_t)get_rand_32()%nomes->qtd;
-    //int num = (rand() % 10);
     
     Palavra secreta;
     acessarValor(nomes, num, &secreta); //secreta será a palavra escolhida
-    //printf("%s", secreta.nome); //teste
     
     // iniciando o jogo
     jogar(secreta, pontos, ssd, frame_area);
@@ -172,12 +169,12 @@ void desembaraca(Lista *nomes, int pontos, uint8_t* ssd, struct render_area fram
 // main
 int main() {
 
+    //incializações necessárias para a placa
     gpio_init(LED_BLUE);
     gpio_set_dir(LED_BLUE, GPIO_OUT);
     gpio_init(LED_GREEN);
     gpio_set_dir(LED_GREEN, GPIO_OUT);
 
-    // inicialização do ADC
     stdio_init_all();
     adc_init();
 
@@ -192,17 +189,13 @@ int main() {
     gpio_set_dir(BUTTON2_PIN, GPIO_IN);
     gpio_pull_up(BUTTON2_PIN);
 
-    // inicializando o i2c
     i2c_init(i2c1, ssd1306_i2c_clock * 1000);
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
     gpio_pull_up(I2C_SDA);
     gpio_pull_up(I2C_SCL);
 
-    // inicializando o oled
-    
-
-    // configuração do display
+    //configuração do display
     struct render_area frame_area = {
         start_column : 0,
         end_column : ssd1306_width - 1,
@@ -215,34 +208,28 @@ int main() {
     memset(ssd, 0, ssd1306_buffer_length);
     render_on_display(ssd, &frame_area);
 
-    //display_text_on_ssd1306(ssd, "oi", "oieee", ssd1306_buffer_length, &frame_area);
-
-
     //criação da lista
     Lista *nomes;
     nomes = criar(nomes);
     printf("Lista criada\n");
-    //criação do elemento abacate
+
+    //criação de 5 elementos para exemplificar o funcionamento do jogo
     char *temp1[] = {"a", "ba", "ca", "te"};
     int pos1[] = {1, 2, 3, 4};
     Palavra abacate = criarPalavra("abacate", temp1, pos1, 4);
-    
-    //criação do elemento banana
+
     char *temp2[] = {"te", "le", "fo", "ne", "ma"};
     int pos2[] = {1, 2, 3, 4, 5};
     Palavra telefonema = criarPalavra("telefonema", temp2, pos2, 5);
     
-    //criação do elemento cachorro
     char *temp3[] = {"bi", "bli", "o", "te", "ca"};
     int pos3[] = {1, 2, 3, 4, 5};
     Palavra biblioteca = criarPalavra("biblioteca", temp3, pos3, 5);
     
-    //criação do elemento paralelepipedo
     char *temp4[] = {"es", "pi", "na", "fre"};
-    int pos4[] = {1, 2, 3, 4, 5, 6, 7};
+    int pos4[] = {1, 2, 3, 4};
     Palavra espinafre = criarPalavra("espinafre", temp4, pos4, 6);
     
-    //criação da palavra matematica
     char *temp5[] = {"mo", "nu", "men", "to"};
     int pos5[] = {1, 2, 3, 4};
     Palavra monumento = criarPalavra("monumento", temp5, pos5, 4);
@@ -253,28 +240,27 @@ int main() {
     inserirInicio(nomes, biblioteca);
     inserirInicio(nomes, telefonema);
     inserirInicio(nomes, abacate);
-    
-    //exibindo a lista
-    //exibir(nomes); //teste
 
+    //inicialização dos pontos
     int pontos = 0;
 
     //loop do jogo
     while(1){
-            uint8_t ssd[ssd1306_buffer_length];
-    memset(ssd, 0, ssd1306_buffer_length);
-    render_on_display(ssd, &frame_area);
+        //reseta o display
+        uint8_t ssd[ssd1306_buffer_length];
+        memset(ssd, 0, ssd1306_buffer_length);
+        render_on_display(ssd, &frame_area);
 
         printf("Pontuação: %d\n", pontos);
-        desembaraca(nomes, pontos, ssd, frame_area); // como no momento só existe esse jogo, ele vai rodar infinitamente
-        // Liga o LED
+        desembaraca(nomes, pontos, ssd, frame_area); //como no momento só existe esse jogo, ele vai rodar infinitamente
+        //liga o led verde para indicar que a palavra foi resolvida
         gpio_put(LED_GREEN, true);
-        sleep_ms(1500);  // Espera 250ms
+        sleep_ms(1500);
 
         // Desliga o LED
         gpio_put(LED_GREEN, false);
-        sleep_ms(150);  // Espera 250ms
+        sleep_ms(150);
     
-    pontos++;
+        pontos++;
     }
 }
