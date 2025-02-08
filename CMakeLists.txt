@@ -58,6 +58,7 @@ target_include_directories(aBC PRIVATE
 # Add any user requested libraries
 target_link_libraries(aBC 
         hardware_i2c
+        pico_rand
         )
 
 pico_add_extra_outputs(aBC)
